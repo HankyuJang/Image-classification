@@ -1,4 +1,14 @@
 #!/usr/bin/env python
+#==============================================================================
+# k 3 -> Accuracy 69.0 % | Time 139
+# k 4 -> Accuracy 70.0 % | Time 169
+# k 5 -> Accuracy 69.0 % | Time 215
+# k 6 -> Accuracy 70.0 % | Time 181
+# k 7 -> Accuracy 70.0 % | Time 207
+# k 8 -> Accuracy 69.0 % | Time 273
+# k 9 -> Accuracy 71.0 % | Time 328
+# k 10 -> Accuracy 70.0 % | Time 266
+#==============================================================================
 
 from __future__ import division
 import numpy as np
@@ -7,7 +17,7 @@ from numpy.linalg import norm
 import cPickle as pickle
 import timeit
 from collections import Counter
-
+from heapq import nsmallest
 
 class NeuralNet(object):
     def __init__(self): pass
@@ -51,13 +61,9 @@ class KNN(object):
 
     def nearest_neighbours(self, p):
         distances = norm(self.X_train - p, axis=1)
-# return sorted(zip(distances, self.y_train), key=lambda x: x[0])[:self.k]
-        sorted_k = zip(distances, self.y_train)
-        for j in range(self.k):
-            for i in range(len(sorted_k)-1):
-                if sorted_k[i][0] < sorted_k[i+1][0]:
-                    sorted_k[i], sorted_k[i+1] = sorted_k[i+1], sorted_k[i]
-        return [n[1] for n in sorted_k[-self.k:]]
+        neighbors = zip(distances, self.y_train)
+        k_nearest = nsmallest(self.k, neighbors, key=lambda x: x[0])
+        return map(lambda x:x[1], k_nearest)
 
 
 def read_file(fname):
