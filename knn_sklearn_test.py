@@ -3,14 +3,21 @@ from sklearn.neighbors import KNeighborsClassifier as KNN_sklearn
 import timeit
 import numpy as np
 from orient import KNN
+from sklearn.decomposition import PCA
 
 def read_file(fname):
     X = np.loadtxt(fname, usecols=range(2, 194), dtype=int)
     y = np.loadtxt(fname, usecols=1, dtype=int)
     return X/255, y
 
+
+pca = PCA(n_components=0.85, svd_solver="full")
+
 X, y = read_file("train-data.txt")
+X = pca.fit_transform(X)
+
 Xt, yt = read_file("test-data.txt")
+Xt = pca.transform(Xt)
 
 tic = timeit.default_timer()
 
@@ -25,7 +32,7 @@ print "Time", int(toc - tic)
 print "==============="
 
 scores = []
-for k in range(3, 11):
+for k in range(3, 12):
     tic = timeit.default_timer()
 
     knn = KNN(k)
