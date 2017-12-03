@@ -36,7 +36,7 @@ np.random.seed(3)
 
 
 class NeuralNet(object):
-    def __init__(self, alpha=0.01, iterations=100, layers_dims=[192, 16, 4]):
+    def __init__(self, alpha=0.005, iterations=5000, layers_dims=[192, 64, 32, 16, 4]):
         self.set_parameters(alpha, iterations, layers_dims)
         
     def set_parameters(self, alpha, iterations, layer_dims): 
@@ -119,7 +119,6 @@ class NeuralNet(object):
     def backpropogation(self, AL, Y, caches): 
         grads = {}
         L = len(caches)
-        m = AL.shape[1]
         Y = Y.reshape(AL.shape)
         
         dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
@@ -160,15 +159,22 @@ class NeuralNet(object):
             self.update_parameters(grads)
 #            print "Parameters Updated"
 
-            if i%10 == 0:
+            if i%100 == 0:
                 print "Iteration", i, "-> Cost", cost
+        
+        self.val = AL
     
     def test(self, X_test, y_test):
         X_t = X_test
         Y_t = y_test
 
-        self.forward_propogation(X_t)
-
+        AL,_ = self.forward_propogation(X_t)
+        original = Y_t.argmax(0)
+        predicted = AL.argmax(0)
+        incorrect = np.count_nonzero(original - predicted)
+#        print incorrect, len(original)
+        return round((len(original) - incorrect) / len(original), 2) * 100
+        
 
 class AdaBoost(object):
     def __init__(self, k = 10):
@@ -224,7 +230,7 @@ if __name__ == "__main__":
 #    task, fname, model_file, model = "train train-data.txt knn.txt nearest".split()
 #    task, fname, model_file, model = "test test-data.txt knn.txt nearest".split()
     task, fname, model_file, model = "train train-data.txt nnet.txt nnet".split()
-#    task, fname, model_file, model = "test test-data.txt knn.txt nearest".split()
+#    task, fname, model_file, model = "test test-data.txt nnet.txt nnet".split()
     
     print ("Reading data from", fname, "...")
     X, y = read_file(fname)
