@@ -22,6 +22,11 @@
 # k 11 ->  Accuracy 70.0 % | Time 42
 #==============================================================================
 
+# ==  Neural Network===========================================================
+#
+# Implemented He Initialization
+# Implemented Regularization
+# =============================================================================
 
 from __future__ import division
 import sys
@@ -31,24 +36,25 @@ from numpy.linalg import norm
 import cPickle
 from collections import Counter
 from heapq import nsmallest
+from random import shuffle
 
 np.random.seed(3)
 
-
 class NeuralNet(object):
-    def __init__(self, alpha=0.005, iterations=5000, layers_dims=[192, 64, 32, 16, 4]):
-        self.set_parameters(alpha, iterations, layers_dims)
+    def __init__(self, alpha=0.125, iterations=2000, lambd=1, layer_dims=[192, 193, 64, 16, 4]):
+        self.set_parameters(alpha, iterations, lambd, layer_dims)
         
-    def set_parameters(self, alpha, iterations, layer_dims): 
+    def set_parameters(self, alpha, iterations, lambd, layer_dims): 
         self.alpha = alpha
         self.iterations = iterations
+        self.lambd = lambd
         self.layer_dims = layer_dims
         self.initialize_parameters(layer_dims)
     
     def initialize_parameters(self, layer_dims):
         self.parameters = {}
         for l in range(1, len(layer_dims)):
-            self.parameters["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) * 0.01
+            self.parameters["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) * np.sqrt(2 / layer_dims[l - 1])
             self.parameters["b" + str(l)] = np.zeros((layer_dims[l], 1))
     
     def sigmoid(self, Z):
@@ -87,21 +93,31 @@ class NeuralNet(object):
 
     def compute_cost(self, AL, Y):
         m = Y.shape[1]
-        cost = (-1/m)* np.sum( np.multiply(Y, np.log(AL)) + np.multiply(1-Y, np.log(1-AL)) )
-        cost = np.squeeze(cost)
+        L = len(self.layer_dims) - 1
+        
+        cross_entropy_cost = (-1/m)* np.sum( np.multiply(Y, np.log(AL)) + np.multiply(1-Y, np.log(1-AL)) )
+        
+        W_sum = 0
+        for l in range(1, L+1):
+            W_sum += np.sum(np.square(self.parameters["W"+str(l)]))
+        regularized_cost = self.lambd * W_sum / (2 * m)  
+        
+        cost = np.squeeze(cross_entropy_cost) + regularized_cost
         return cost
         
-    def linear_backward(self, dZ, cache):
+    def linear_backward(self, dZ, cache, l):
         A_prev, W, b = cache
         m = A_prev.shape[1]
         
-        dW = (1/m) * np.dot(dZ, A_prev.T)
+        W = self.parameters["W" + str(l)]
+        
+        dW = (1/m) * np.dot(dZ, A_prev.T) + (self.lambd * W) / m
         db = (1/m) * np.sum(dZ, axis=1, keepdims=True)
         dA_prev = np.dot(W.T, dZ)
         
         return dA_prev, dW, db
     
-    def linear_activation_backward(self, dA, cache, activation):
+    def linear_activation_backward(self, dA, cache, activation, l):
         ((A_prev, W, b), Z) = cache 
         
         if activation == "relu":
@@ -112,7 +128,7 @@ class NeuralNet(object):
             t = 1/(1+np.exp(-Z))
             dZ = dA * t * (1-t)        
         
-        dA_prev, dW, db = self.linear_backward(dZ, (A_prev, W, b))
+        dA_prev, dW, db = self.linear_backward(dZ, (A_prev, W, b), l)
         
         return dA_prev, dW, db
         
@@ -124,11 +140,11 @@ class NeuralNet(object):
         dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
         
         cache = caches[L-1]
-        grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_activation_backward(dAL, cache, "sigmoid")
+        grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_activation_backward(dAL, cache, "sigmoid", L)
       
         for l in range(L-1, 0, -1):
             cache = caches[l-1]
-            dA_prev_temp, dW_temp, db_temp = self.linear_activation_backward(grads["dA"+str(l+1)], cache, "relu")
+            dA_prev_temp, dW_temp, db_temp = self.linear_activation_backward(grads["dA"+str(l+1)], cache, "relu", l)
             grads["dA" + str(l)] = dA_prev_temp
             grads["dW" + str(l)] = dW_temp
             grads["db" + str(l)] = db_temp
@@ -145,24 +161,22 @@ class NeuralNet(object):
         X = X_train
         Y = y_train
         
+        self.costs = [(0,0)]
         for i in range(self.iterations):
             AL, caches = self.forward_propogation(X)
-#            print "Forward Propogation Complete"
             
             cost = self.compute_cost(AL, Y)
-#            print "Cost Computed"
             
             grads = self.backpropogation(AL, Y, caches)
-#            print "Backpropogation Complete"
-#            print grads.keys()
             
             self.update_parameters(grads)
-#            print "Parameters Updated"
-
-            if i%100 == 0:
+            
+            if abs(self.costs[-1][1] - cost) < 10**(-5):
+                break
+            
+            if i%100 == 0:            
+                self.costs.append((i, cost))
                 print "Iteration", i, "-> Cost", cost
-        
-        self.val = AL
     
     def test(self, X_test, y_test):
         X_t = X_test
@@ -172,17 +186,7 @@ class NeuralNet(object):
         original = Y_t.argmax(0)
         predicted = AL.argmax(0)
         incorrect = np.count_nonzero(original - predicted)
-#        print incorrect, len(original)
         return round((len(original) - incorrect) / len(original), 2) * 100
-        
-
-class AdaBoost(object):
-    def __init__(self, k = 10):
-        self. k = k
-
-    def train(self, X_train, y_train): pass
-
-    def test(self, X_test, y_test): pass
 
 
 class KNN(object):
@@ -212,11 +216,23 @@ class KNN(object):
         return map(lambda x: x[1], k_nearest)
 
 
+class AdaBoost(object):
+    def __init__(self, k = 10):
+        self. k = k
+
+    def train(self, X_train, y_train): pass
+
+    def test(self, X_test, y_test): pass
+
 
 def read_file(fname):
     X = np.loadtxt(fname, usecols=range(2, 194), dtype=int)
     y = np.loadtxt(fname, usecols=1, dtype=int)  # .reshape(len(X), 1)
-    return X/255, y
+    shuffle_indices = list(range(len(y)))
+    shuffle(shuffle_indices)
+    X_shuffled  = X[shuffle_indices, ]
+    y_shuffled = y[shuffle_indices, ]
+    return X_shuffled/255, y_shuffled
 
 def transform_Y_for_NN(Y):
 #    Y = Y.reshape(len(Y), 1)
@@ -225,11 +241,12 @@ def transform_Y_for_NN(Y):
     lb.fit(Y)
     return lb
 
+
 if __name__ == "__main__":
-#    task, fname, model_file, model = sys.argv[1:]
+    task, fname, model_file, model = sys.argv[1:]
 #    task, fname, model_file, model = "train train-data.txt knn.txt nearest".split()
 #    task, fname, model_file, model = "test test-data.txt knn.txt nearest".split()
-    task, fname, model_file, model = "train train-data.txt nnet.txt nnet".split()
+#    task, fname, model_file, model = "train train-data.txt nnet.txt nnet".split()
 #    task, fname, model_file, model = "test test-data.txt nnet.txt nnet".split()
     
     print ("Reading data from", fname, "...")
@@ -250,6 +267,7 @@ if __name__ == "__main__":
             lb = transform_Y_for_NN(y)
             Y_lb = lb.transform(y)
             nnet = NeuralNet()
+#            nnet = NeuralNet(alpha=0.125, iterations=10000, layers_dims=[192]+[256, 128, 64, 32, 16, 4]+[4])
             nnet.train(X.T, Y_lb.T)
             models = (lb, nnet)
         else:
