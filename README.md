@@ -19,6 +19,23 @@
 
 1. Description of how we formulated the problem including precisely defining the abstractions
 2. Brief description of how program works
+
+__Training__
+
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `knn.txt`
+
+```
+./orient.py train train-data.txt knn.txt nearest
+```
+
+__Testing__
+
+Next, we test the test dataset using the trained model which is saved in `knn.txt`.
+
+```
+python test test-data.txt knn.txt nearest
+```
+
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
 
 ## Classifier2: `adaboost`
@@ -30,13 +47,32 @@
 ## Classifier3: `nnet`
 
 1. Description of how we formulated the problem including precisely defining the abstractions
-2. Brief description of how program works
-
-3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
 
 Due to the complexity of the structure of the neural network, we first designed the classifier to work on one hidden layer and `relu` for all layers and sigmoid for the last. We tried many different combinations of number of neurons on the hidden layer and varied `alpha.`
 
-Then, we modified the structure to make it work on different activations as well as number of layers. Here are the parameter sets we've tried to find a good working parameter set:
+Then, we modified the structure to make it work on different activations as well as number of layers. We've experimented the classifer by varying alpha, number of neurons, and activation function. Details are described in section 3.
+
+2. Brief description of how program works
+
+__Training__
+
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `nnet.txt`
+
+```
+./orient.py train train-data.txt nnet.txt nnet
+```
+
+__Testing__
+
+Next, we test the test dataset using the trained model which is saved in `nnet.txt`.
+
+```
+python test test-data.txt nnet.txt nnet
+```
+
+3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
+
+ Here are the parameter sets we've tried to find a good working parameter set:
 
 ### Experiment with one hidden layer
 - alpha: <a href="https://www.codecogs.com/eqnedit.php?latex=2^{-8},&space;2^{-7},&space;...,&space;2^0" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{-8},&space;2^{-7},&space;...,&space;2^0" title="2^{-8}, 2^{-7}, ..., 2^0" /></a>
