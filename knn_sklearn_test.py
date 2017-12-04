@@ -24,15 +24,15 @@ tic = timeit.default_timer()
 knn = KNN_sklearn()
 knn.fit(X, y)
 score = knn.score(Xt, yt)
-print round(score, 2)*100, "%"
+print (round(score, 2)*100, "%")
 
 toc = timeit.default_timer()
-print "Time", int(toc - tic)
+print ("Time", int(toc - tic))
 
-print "==============="
+print ("===============")
 
 scores = []
-for k in range(3, 12):
+for k in range(180, 220, 10):
     tic = timeit.default_timer()
 
     knn = KNN(k)
@@ -41,7 +41,7 @@ for k in range(3, 12):
 
     toc = timeit.default_timer()
 
-    print "k", k, "-> Accuracy", score, "%", "| Time", int(toc - tic)
+    print ("k", k, "-> Accuracy", score, "%", "| Time", int(toc - tic))
 
 
     scores.append(score)
