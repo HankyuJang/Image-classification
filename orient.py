@@ -87,15 +87,15 @@ def read_file(fname):
 
 if __name__ == "__main__":
     tic_start = timeit.default_timer()
-#    task, fname, model_file, model = sys.argv[1:]
-#    task, fname, model_file, model = "train train-data.txt knn.txt nearest".split()
-    task, fname, model_file, model = "test test-data.txt knn.txt nearest".split()
+    task, fname, model_file, model = sys.argv[1:]
+    # task, fname, model_file, model = "train train-data.txt knn.txt nearest".split()
+    # task, fname, model_file, model = "test test-data.txt knn.txt nearest".split()
 
-    print "Reading data from", fname, "..."
+    print ("Reading data from", fname, "...")
     X, y = read_file(fname)
 
     if task == "train":
-        print "Training", model, "model..."
+        print ("Training", model, "model...")
         tic = timeit.default_timer()
 
         if model == "nearest":
@@ -113,10 +113,10 @@ if __name__ == "__main__":
             pass
 
         toc = timeit.default_timer()
-        print "Time taken", int(toc - tic), "seconds"
+        print ("Time taken", int(toc - tic), "seconds")
 
     else:
-        print "Testing", model, "model..."
+        print ("Testing", model, "model...")
         tic = timeit.default_timer()
 
         if model == "nearest":
@@ -129,9 +129,9 @@ if __name__ == "__main__":
             pass
         else:
             pass
-        print "Accuracy", score, "%"
+        print ("Accuracy", score, "%")
         toc = timeit.default_timer()
-        print "Time taken", int(toc - tic), "seconds"
+        print ("Time taken", int(toc - tic), "seconds")
 
     toc_end = timeit.default_timer()
-    print "Total time", int(toc_end - tic_start), "seconds"
+    print ("Total time", int(toc_end - tic_start), "seconds")
