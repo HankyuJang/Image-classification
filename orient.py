@@ -27,9 +27,10 @@
 # Implemented He Initialization
 # Implemented Regularization
 # Sometimes gives divide by 0 error for certain values of lambda
+# Softmax
 #
 ##### TODO  ###############
-# Softmax
+#
 # Dropout
 # =============================================================================
 
@@ -46,7 +47,7 @@ from random import shuffle
 np.random.seed(3)
 
 class NeuralNet(object):
-    def __init__(self, alpha=0.1, iterations=1000, lambd=0, layer_dims=[192, 193, 192, 4]):
+    def __init__(self, alpha=0.3, iterations=1000, lambd=0, layer_dims=[192, 16, 4]):
         self.set_parameters(alpha, iterations, lambd, layer_dims)
 
     def set_parameters(self, alpha, iterations, lambd, layer_dims):
@@ -65,6 +66,11 @@ class NeuralNet(object):
     def sigmoid(self, Z):
         return 1 / (1 + np.exp(-Z))
 
+    def softmax(self, Z):
+        Z_exp = np.exp(Z - np.max(Z))
+        Z_sum = np.sum(Z_exp, axis=0, keepdims=True)
+        return Z_exp / Z_sum
+
     def relu(self, Z):
         return np.maximum(0, Z)
 
@@ -74,6 +80,8 @@ class NeuralNet(object):
             A = self.sigmoid(Z)
         elif activation == "relu":
             A = self.relu(Z)
+        elif activation == "softmax":
+            A = self.softmax(Z)
         cache = ((A_prev, W, b), Z)
         return A, cache
 
@@ -91,16 +99,24 @@ class NeuralNet(object):
 
         W = self.parameters["W" + str(L)]
         b = self.parameters["b" + str(L)]
-        AL, cache = self.linear_fwd_activation(A, W, b, "sigmoid")
+        AL, cache = self.linear_fwd_activation(A, W, b, "softmax")
         caches.append(cache)
 
         return AL, caches
 
-    def compute_cost(self, AL, Y):
+    def cross_entropy_softmax(self, AL, ZL, Y):
+#        return - np.sum(np.multiply(Y, np.log(AL)))
+        return - np.sum(np.multiply(Y, ZL - np.log(np.sum(np.exp(ZL), axis=0, keepdims=True))))
+
+    def compute_cost(self, AL, Y, caches):
         m = Y.shape[1]
         L = len(self.layer_dims) - 1
 
-        cross_entropy_cost = (-1/m)* np.sum( np.multiply(Y, np.log(AL)) + np.multiply(1-Y, np.log(1-AL)) )
+#       For Sigmoid
+#        cross_entropy_cost = (-1/m) * np.sum( np.multiply(Y, np.log(AL)) + np.multiply(1-Y, np.log(1-AL)) )
+
+        ZL = caches[-1][1]
+        cross_entropy_cost = self.cross_entropy_softmax(AL, ZL, Y) / m
 
         W_sum = 0
         for l in range(1, L+1):
@@ -122,6 +138,9 @@ class NeuralNet(object):
 
         return dA_prev, dW, db
 
+    def dZL(self, AL, Y):
+        return AL - Y
+
     def linear_activation_backward(self, dA, cache, activation, l):
         ((A_prev, W, b), Z) = cache
 
@@ -130,8 +149,16 @@ class NeuralNet(object):
             dZ[Z <= 0] = 0
 
         elif activation == "sigmoid":
-            t = 1/(1+np.exp(-Z))
+            t = self.sigmoid(-Z)
             dZ = dA * t * (1-t)
+
+        elif activation == "softmax":
+            t = self.softmax(Z)
+            dZ = t - Z
+#            dZ = np.zeros(shape=Z.shape)
+#            for i in range(dZ.shape[1]):
+#                if
+#                dZ[:,i] = t[:,i] * (1 - t[:,i])
 
         dA_prev, dW, db = self.linear_backward(dZ, (A_prev, W, b), l)
 
@@ -142,14 +169,14 @@ class NeuralNet(object):
         L = len(caches)
         Y = Y.reshape(AL.shape)
 
-        dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
+#        dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
 
         cache = caches[L-1]
-        grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_activation_backward(dAL, cache, "sigmoid", L)
-
+#        grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_activation_backward(dAL, cache, "softmax", L)
+        grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_backward(self.dZL(AL, Y), cache[0], L)
         for l in range(L-1, 0, -1):
             cache = caches[l-1]
-            dA_prev_temp, dW_temp, db_temp = self.linear_activation_backward(grads["dA"+str(l+1)], cache, "sigmoid", l)
+            dA_prev_temp, dW_temp, db_temp = self.linear_activation_backward(grads["dA"+str(l+1)], cache, "relu", l)
             grads["dA" + str(l)] = dA_prev_temp
             grads["dW" + str(l)] = dW_temp
             grads["db" + str(l)] = db_temp
@@ -170,7 +197,7 @@ class NeuralNet(object):
         for i in range(self.iterations):
             AL, caches = self.forward_propogation(X)
 
-            cost = self.compute_cost(AL, Y)
+            cost = self.compute_cost(AL, Y, caches)
 
             grads = self.backpropogation(AL, Y, caches)
 
@@ -180,6 +207,8 @@ class NeuralNet(object):
 #                break
 
             if i%100 == 0:
+#                print AL
+#                print Y
                 self.costs.append((i, cost))
                 print "Iteration", i, "-> Cost", cost
 
@@ -285,10 +314,10 @@ if __name__ == "__main__":
             lb = transform_Y_for_NN(y)
             Y_lb = lb.transform(y)
 
-            alpha = 0.6
-            iterations = 2000
-            lambd = 0.1
-            layers = [X.shape[1]] + [100, 20] + [Y_lb.shape[1]]
+            alpha = 0.1
+            iterations = 1000
+            lambd = 0
+            layers = [X.shape[1]] + [193] + [Y_lb.shape[1]]
 
             nnet = NeuralNet(alpha=alpha, iterations=iterations, lambd=lambd, layer_dims=layers)
 
