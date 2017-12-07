@@ -75,7 +75,7 @@ We've also tried another dimensional reduction algorithm Non-negative Matrix Fac
 
 Due to the complexity of the structure of the neural network, we first designed the classifier to work on one hidden layer and `relu` for all layers and sigmoid for the last. We tried many different combinations of number of neurons on the hidden layer and varied `alpha.`
 
-Then, we modified the structure to make it work on different activations as well as number of layers. We've experimented the classifer by varying alpha, number of neurons, and activation function. Details are described in section 3.
+Then, we modified the structure to make it work on different activations as well as number of layers. We've experimented the classifer by varying alpha, number of neurons, and activation function. To prevent Neural Network from overfitting the training set, we've tried diminishing value of alpha as iterations increase, and introduced a regularization term lambda. Details are described in section 3.
 
 2. Brief description of how program works
 
@@ -120,7 +120,9 @@ We had one problem: as the iteration increase, Neural Network overfitted to the 
 ('Test', '75.0%', 'train', '79.0%', 'log loss', 0.54874530470275185, 'alpha', 0.5, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 193, 4], 'PCA', False)
 ```
 
-As we have modifeid the script to work on any kind of hidden layers and number of neurons, here's another experiment that gave us 75% accuracy on the test set.
+As we have modifeid the script to work on any kind of hidden layers and number of neurons, here's another experiment that gave us 75% accuracy on the test set. Following result is from four hidden layers (8, 6, 7, 5) neurons.
 ```
 ('Test', '75.0%', 'train', '77.0%', 'log loss', 0.58189618939350252, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 1240, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
 ```
+
+We've tried initializing He, and even implemented dropout as an experiment. However, we couldn't get pass the accuracy of 75%.
