@@ -77,7 +77,7 @@ In this problem, we used simple decision stumps that compares one entry in teh i
 
 __Training__
 
-First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `nnet.txt`
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `adaboost.txt`
 
 ```
 python orient.py train train-data.txt adaboost.txt adaboost
