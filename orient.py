@@ -43,6 +43,7 @@ import cPickle
 from collections import Counter
 from heapq import nsmallest
 import math
+import random
 np.random.seed(3)
 
 class NeuralNet(object):
@@ -290,14 +291,104 @@ class KNN(object):
         k_nearest = nsmallest(self.k, neighbors, key=lambda x: x[0])
         return map(lambda x: x[1], k_nearest)
 
-
+# k: number of decision stumps
 class AdaBoost(object):
-    def __init__(self, k = 10):
+    def __init__(self, k = 500):
         self. k = k
 
-    def train(self, X_train, y_train): pass
+    def train(self, X_train, y_train, variables): 
+        possible_pairs = get_possible_pairs(X_train)
+        y_unique = list(set(y_train))
+        vote_classifier = {}
+        weights = np.array([float(1)/float(len(y_train))]*len(y_train))
+        for variable in variables:
+            error = 0
+            index1 = variable[0]
+            index2 = variable[1]
+            decision_stump = []
+            decision_stump_category = {'Positive':{},'Negative':{}}
+            #y_category = {}
+            #count_y_category = 0
+            for i in list(range(0,len(X_train))):
+                if X_train[i][index1] >= X_train[i][index2]:
+                    decision_stump.append('Positive')
+                    try:
+                        decision_stump_category['Positive'][y_train[i]] += 1
+                    except:
+                        decision_stump_category['Positive'][y_train[i]] = 1
+                        #y_category[y_train[i]] = count_y_category
+                        #count_y_category += 1
+                else:
+                    decision_stump.append('Negative')
+                    try:
+                        decision_stump_category['Negative'][y_train[i]] += 1
+                    except:
+                        decision_stump_category['Negative'][y_train[i]] = 1
+                        #y_category[y_train[i]] = count_y_category
+                        #count_y_category += 1
 
-    def test(self, X_test, y_test): pass
+
+            Positive_Class = max(decision_stump_category['Positive'], key=lambda k: decision_stump_category['Positive'][k])
+            Negative_Class = max(decision_stump_category['Negative'], key=lambda k: decision_stump_category['Negative'][k])
+            decision_stump_classification = []
+            for i in list(range(0,len(y_train))):
+                if decision_stump[i] == 'Positive':
+                    decision_stump_classification.append(Positive_Class)
+                else:
+                    decision_stump_classification.append(Negative_Class)
+                if decision_stump_classification[i] != y_train[i]:
+                    error = error + weights[i]
+
+            if error > 0.5:
+                continue
+
+            for i in list(range(0,len(y_train))):
+                if decision_stump_classification[i] == y_train[i]:
+                    weights[i] = weights[i]*error/(1.0-error)
+
+            #Normalizing weights
+            sum_weights = sum(weights)
+            weights = weights / sum_weights
+            vote_classifier[variable] = {}
+            vote_classifier[variable]['weight'] = math.log((1-error) / error)
+            vote_classifier[variable]['Positive_Class'] = Positive_Class
+            vote_classifier[variable]['Negative_Class'] = Negative_Class
+
+        return vote_classifier, y_unique
+
+    def test(self, X_test, y_test, vote_classifier, y_unique):
+        possible_pairs = get_possible_pairs(X_test)
+        y_unique_dict = {}
+        y_unique_dict[y_unique[0]] = 1
+        y_unique_dict[y_unique[1]] = -1
+        classification = [0]*len(y_test)
+        classifiers = vote_classifier
+        for classifier in classifiers:
+            index1 = classifier[0]
+            index2 = classifier[1]
+            for i in list(range(0,len(y_test))):
+                if X_test[i][index1] >= X_test[i][index2]:
+                    vote = classifiers[classifier]['Positive_Class']
+                    classification[i] = classification[i] + y_unique_dict[vote]*classifiers[classifier]['weight']
+                else:
+                    vote = classifiers[classifier]['Negative_Class']
+                    classification[i] = classification[i] + y_unique_dict[vote]*classifiers[classifier]['weight']
+        classification_category = []
+        for i in list(range(0,len(y_test))):
+            if classification[i] >= 0:
+                classification_category.append(y_unique[0])
+            else:
+                classification_category.append(y_unique[1])
+        return classification_category
+
+    def get_possible_pairs(self, X):
+        possible_pairs = []
+        for x in range(X.shape[1]):
+            for y in list(range(x,X.shape[1])):
+                if x==y:
+                    continue
+                possible_pairs.append((x,y))
+        return possible_pairs
 
 
 def read_file(fname, shuffle_data=True):
@@ -317,6 +408,15 @@ def transform_Y_for_NN(Y):
     lb = LabelBinarizer()
     lb.fit(Y)
     return lb
+
+def get_possible_pairs(X):
+    possible_pairs = []
+    for x in range(192):
+        for y in list(range(x,192)):
+            if x==y:
+                continue
+            possible_pairs.append((x,y))
+    return possible_pairs
 
 
 if __name__ == "__main__":
@@ -346,7 +446,69 @@ if __name__ == "__main__":
             models = (knn)
 
         elif model == "adaboost":
-            pass
+            k = 500
+            possible_pairs = get_possible_pairs(X)
+            variables_0_90 = random.sample(possible_pairs, k)
+            variables_0_180 = random.sample(possible_pairs, k)
+            variables_0_270 = random.sample(possible_pairs, k)
+            variables_90_180 = random.sample(possible_pairs, k)
+            variables_90_270 = random.sample(possible_pairs, k)
+            variables_180_270 = random.sample(possible_pairs, k)
+
+
+            y_train_0 = []
+            X_train_0 = []
+            y_train_90 = []
+            X_train_90 = []
+            y_train_180 = []
+            X_train_180 = []
+            y_train_270 = []
+            X_train_270 = []
+
+            for i in list(range(0,len(y))):
+                if y[i] == 0:
+                    X_train_0.append(X[i])
+                    y_train_0.append(y[i])
+                if y[i] == 90:
+                    X_train_90.append(X[i])
+                    y_train_90.append(y[i])
+                if y[i] == 180:
+                    X_train_180.append(X[i])
+                    y_train_180.append(y[i])
+                if y[i] == 270:
+                    X_train_270.append(X[i])
+                    y_train_270.append(y[i])
+
+            #pairs (0,90), (0,180), (0,270), (90,180), (90,270),(180,270)
+            X_train_0_90 = X_train_0 + X_train_90
+            y_train_0_90 = y_train_0 + y_train_90
+
+            X_train_0_180 = X_train_0 + X_train_180
+            y_train_0_180 = y_train_0 + y_train_180
+
+            X_train_0_270 = X_train_0 + X_train_270
+            y_train_0_270 = y_train_0 + y_train_270
+
+            X_train_90_180 = X_train_90 + X_train_180
+            y_train_90_180 = y_train_90 + y_train_180
+
+            X_train_90_270 = X_train_90 + X_train_270
+            y_train_90_270 = y_train_90 + y_train_270
+
+            X_train_180_270 = X_train_180 + X_train_270
+            y_train_180_270 = y_train_180 + y_train_270
+
+            adaboost = AdaBoost(k)
+
+            vote_classifier_y_unique = []
+            vote_classifier_y_unique.append(adaboost.train(X_train_0_90, y_train_0_90,variables_0_90)) 
+            vote_classifier_y_unique.append(adaboost.train(X_train_0_180, y_train_0_180,variables_0_180)) 
+            vote_classifier_y_unique.append(adaboost.train(X_train_0_270, y_train_0_270,variables_0_270)) 
+            vote_classifier_y_unique.append(adaboost.train(X_train_90_180, y_train_90_180,variables_90_180)) 
+            vote_classifier_y_unique.append(adaboost.train(X_train_90_270, y_train_90_270,variables_90_270)) 
+            vote_classifier_y_unique.append(adaboost.train(X_train_180_270, y_train_180_270,variables_180_270)) 
+
+            models = (vote_classifier_y_unique, adaboost)
 
         elif model == "nnet":
             lb = transform_Y_for_NN(y)
@@ -385,7 +547,24 @@ if __name__ == "__main__":
             score = knn.test(X, y)
 
         elif model == "adaboost":
-            pass
+            vote_classifier_y_unique, adaboost = models
+
+            classification_category_0_90 = adaboost.test(X, y, vote_classifier_y_unique[0][0], vote_classifier_y_unique[0][1])
+            classification_category_0_180 = adaboost.test(X, y, vote_classifier_y_unique[1][0], vote_classifier_y_unique[1][1])
+            classification_category_0_270 = adaboost.test(X, y, vote_classifier_y_unique[2][0], vote_classifier_y_unique[2][1])
+            classification_category_90_180 = adaboost.test(X, y, vote_classifier_y_unique[3][0], vote_classifier_y_unique[3][1])
+            classification_category_90_270 = adaboost.test(X, y, vote_classifier_y_unique[4][0], vote_classifier_y_unique[4][1])
+            classification_category_180_270 = adaboost.test(X, y, vote_classifier_y_unique[5][0], vote_classifier_y_unique[5][1])
+
+            final_classification = []
+            count_correct = 0
+            for i in list(range(0,len(y))):
+                lst = [classification_category_0_90[i]] + [classification_category_0_180[i]] + [classification_category_0_270[i]] + [classification_category_90_180[i]] + [classification_category_90_270[i]] + [classification_category_180_270[i]]
+                final_classification.append(max(lst,key=lst.count))
+                if final_classification[i] == y[i]:
+                    count_correct += 1
+
+            score = float(count_correct)/float(len(y))
 
         elif model == "nnet":
             lb, nnet = models
