@@ -421,10 +421,6 @@ def get_possible_pairs(X):
 
 if __name__ == "__main__":
     task, fname, model_file, model = sys.argv[1:]
-#    task, fname, model_file, model = "train train-data.txt knn.txt nearest".split()
-#    task, fname, model_file, model = "test test-data.txt knn.txt nearest".split()
-#    task, fname, model_file, model = "train train-data.txt nnet.txt nnet".split()
-#    task, fname, model_file, model = "test test-data.txt nnet.txt nnet".split()
 
     X, y = read_file(fname, shuffle_data=False)
 
