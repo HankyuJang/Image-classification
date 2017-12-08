@@ -9,4 +9,4 @@ from __future__ import division
 from nn_test_util import test_NN
 
 
-test_NN(alpha=0.3, iterations=2000, lambd=0, hidden_layers=[16])
+nnet = test_NN(alpha=0.3, iterations=1000, lambd=0.5, keep_prob=0.6, hidden_layers=[193, 64])

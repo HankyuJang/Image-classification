@@ -46,13 +46,14 @@ import math
 np.random.seed(3)
 
 class NeuralNet(object):
-    def __init__(self, alpha=0.3, iterations=4000, lambd=0.7, layer_dims=[192, 128, 64, 4]):
-        self.set_parameters(alpha, iterations, lambd, layer_dims)
+    def __init__(self, alpha=0.3, iterations=4000, lambd=0.7, keep_prob=0.8, layer_dims=[192, 128, 64, 4]):
+        self.set_parameters(alpha, iterations, lambd, keep_prob, layer_dims)
 
-    def set_parameters(self, alpha, iterations, lambd, layer_dims):
+    def set_parameters(self, alpha, iterations, lambd, keep_prob, layer_dims):
         self.alpha = alpha
         self.iterations = iterations
         self.lambd = lambd
+        self.keep_prob = keep_prob
         self.layer_dims = layer_dims
         self.initialize_parameters(layer_dims)
 
@@ -73,18 +74,32 @@ class NeuralNet(object):
     def relu(self, Z):
         return np.maximum(0, Z)
 
+    def dropout(self, A):
+        D = np.random.rand(A.shape[0], A.shape[1])
+        D = D < self.keep_prob
+        A = A * D
+        A = A / self.keep_prob
+        return A, D
+
     def linear_fwd_activation(self, A_prev, W, b, activation):
         Z = np.dot(W, A_prev) + b
+
         if activation == "sigmoid":
             A = self.sigmoid(Z)
+            cache = ((A_prev, W, b), Z)
+
         elif activation == "relu":
             A = self.relu(Z)
+            A, D = self.dropout(A)
+            cache = ((A_prev, W, b), Z, D)
+
         elif activation == "softmax":
             A = self.softmax(Z)
-        cache = ((A_prev, W, b), Z)
+            cache = ((A_prev, W, b), Z)
+
         return A, cache
 
-    def forward_propogation(self, X):
+    def forward_propogation_with_dropout(self, X):
         caches = []
         L = len(self.layer_dims) - 1
 
@@ -141,9 +156,11 @@ class NeuralNet(object):
         return AL - Y
 
     def linear_activation_backward(self, dA, cache, activation, l):
-        ((A_prev, W, b), Z) = cache
+        ((A_prev, W, b), Z, D) = cache
 
         if activation == "relu":
+            dA = dA * D                 # Dropout
+            dA = dA / self.keep_prob
             dZ = np.array(dA, copy=True)
             dZ[Z <= 0] = 0
 
@@ -167,6 +184,7 @@ class NeuralNet(object):
 
 #        dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
 #        grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_activation_backward(dAL, cache, "sigmoid", L)
+
         grads["dA"+str(L)], grads["dW"+str(L)], grads["db"+str(L)] = self.linear_backward(self.dZL(AL, Y), cache[0], L)
         for l in range(L-1, 0, -1):
             cache = caches[l-1]
@@ -194,8 +212,8 @@ class NeuralNet(object):
         Y = y_train
 
         costs = [(0,0)]
-        for i in xrange(self.iterations):
-            AL, caches = self.forward_propogation(X)
+        for i in xrange(self.iterations + 1):
+            AL, caches = self.forward_propogation_with_dropout(X)
 
             cost = self.compute_cost(AL, Y, caches)
 
@@ -204,8 +222,10 @@ class NeuralNet(object):
             self.update_parameters(grads)
 
             if i%100 == 0:
-                if i % 1000 == 0 and i < 3000:
-                    self.alpha /= 1.5
+                if i == 1000:
+                    self.alpha /= 2
+                elif i > 2000 and i%1000==0:
+                    self.alpha /= 1.2
                 costs.append((i, cost))
                 acc = self.test(X, Y)
                 print "Iteration", i, "->", "Accuracy", acc, "|| Cost", cost
@@ -215,10 +235,29 @@ class NeuralNet(object):
         self.AL = AL
         self.gradients = grads
 
+    def forward_propogation(self, X):
+        L = len(self.layer_dims) - 1
+
+        A = X
+        for l in range(1, L):
+            A_prev = A
+            W = self.parameters["W" + str(l)]
+            b = self.parameters["b" + str(l)]
+            Z = np.dot(W, A_prev) + b
+            A = self.relu(Z)
+#            A, cache = self.linear_fwd_activation(A_prev, W, b, "relu")
+
+        W = self.parameters["W" + str(L)]
+        b = self.parameters["b" + str(L)]
+        ZL = np.dot(W, A) + b
+        AL = self.softmax(ZL)
+
+        return AL
+
     def test(self, X_test, y_test):
         X_t = X_test
         Y_t = y_test
-        AL,_ = self.forward_propogation(X_t)
+        AL = self.forward_propogation(X_t)
 
         self.original = Y_t.argmax(0)
         self.predicted = AL.argmax(0)
@@ -232,8 +271,7 @@ class KNN(object):
         self.k = k
 
     def train(self, X_train, y_train):
-        self.X_train = X_train
-        self.y_train = y_train
+        self.X_train, self.y_train = X_train, y_train
 
     def test(self, X_test, y_test):
         correct = 0
@@ -243,8 +281,7 @@ class KNN(object):
         return round(correct/len(X_test), 2) * 100
 
     def predict(self, p):
-        k_nearest_neighbours = self.nearest_neighbours(p)
-        class_count = Counter(k_nearest_neighbours)
+        class_count = Counter(self.nearest_neighbours(p))
         return class_count.most_common()[0][0]
 
     def nearest_neighbours(self, p):
@@ -316,11 +353,13 @@ if __name__ == "__main__":
             Y_lb = lb.transform(y)
 
             alpha = 0.3
-            iterations = 4000
-            lambd = 0.7
+            iterations = 2000
+            lambd = 0.3
+            keep_prob = 0.6
             layers = [X.shape[1]] + [128, 64] + [Y_lb.shape[1]]
 
-            nnet = NeuralNet(alpha=alpha, iterations=iterations, lambd=lambd, layer_dims=layers)
+            nnet = NeuralNet(alpha=alpha, iterations=iterations, lambd=lambd,
+                             keep_prob=keep_prob, layer_dims=layers)
 
             nnet.train(X.T, Y_lb.T)
 
