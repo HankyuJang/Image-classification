@@ -66,8 +66,43 @@ We've also tried another dimensional reduction algorithm Non-negative Matrix Fac
 ## Classifier2: `adaboost`
 
 1. Description of how we formulated the problem including precisely defining the abstractions
+
+AdaBoost algorithm is an ensemble method that utilizes a base learning algorithm, then generate many other weak learners to later be used in majority voting for the final classification. AdaBoost is simple, has solid theoretical foundation and performs well when tested in many different domains.
+    
+AdaBoost first assigns equal weights to training data. AdaBoost calls the base learning algorithm to the data set and the distribution of the weights, then generate a base (weak) learner `h`. After being tested by training examples, the weights get updated; if there are incorrectly classified examples, the weights would increase. From these, another weak learner is generated. This procedure is repeated for `T` times, and the final classification is done by majority vote from `T` different learners.
+
+In this problem, we used simple decision stumps that compares one entry in teh image matrix to another. There were 192 possible combinations to generate random pairs to try. Details are explained in part 3.
+
 2. Brief description of how program works
+
+__Training__
+
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `nnet.txt`
+
+```
+python orient.py train train-data.txt adaboost.txt adaboost
+```
+
+__Testing__
+
+Next, we test the test dataset using the trained model which is saved in `adaboost.txt`.
+
+```
+python -i orient.py test test-data.txt adaboost.txt adaboost
+```
+
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
+
+In this problem, we had to deal with a multi-class problem. In order to accomplish this, we decomposed the multi-class task to a series of binary tasks. Which means is that, we did series of one vs one classification such as (0 vs 90), (0 vs 180), (0 vs 270), (90 vs 180), (90 vs 270), and (180 vs 270). Now we have 6 sets of training data.
+
+For each training set, we take a majority vote. Let x represent a row. Let x[4] represent 4th variable in row x and x[8] represent 8th variable in row x. If x[4] - x[8] >=0, then we label a new variable as "Positive". Otherwise, we labeled that as "Negative". For instance, out of 700 rows (based on new variable in "Positive"), lets say, 650 of them were 0 degrees. In this case we have 650 rights, and 50 wrongs. Then we assigned "Positive Class" as 0 degrees. 
+
+This works similarly with labels with "Negative". For instance, out of 900 rows (based on new variable in "Negative"), 800 of them were 90 degrees. Hence, we got 800 rights, and 100 wrongs. In the previous cases, total rights are 650 + 800 = 1450 and total wrongs are 50 + 100 = 150. From these, initial error would be 150/1600.
+
+The weights are initialized as 1/N. As explained above, whenever we get the correct answer, we decresed weights, and otherwise increase the weights. We then normalize the weights, so the weights of misclassified items increase. Then we move to the next decision stump.
+
+In this way of implementation, we got around 66 to 70 percent accuracy.
+
 
 ## Classifier3: `nnet`
 
@@ -125,4 +160,4 @@ As we have modifeid the script to work on any kind of hidden layers and number o
 ('Test', '75.0%', 'train', '77.0%', 'log loss', 0.58189618939350252, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 1240, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
 ```
 
-We've tried initializing He, and even implemented dropout as an experiment. However, we couldn't get pass the accuracy of 75%.
+We've tried initializing He, and even implemented dropout as an experiment. For an experiment with 4 hidden layers using dropout, the training accuracy acturally increased (not overfitting), and test accuracy increased slightly to around 76%.
