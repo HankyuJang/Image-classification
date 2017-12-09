@@ -160,4 +160,7 @@ As we have modifeid the script to work on any kind of hidden layers and number o
 ('Test', '75.0%', 'train', '77.0%', 'log loss', 0.58189618939350252, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 1240, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
 ```
 
-We've tried initializing He, and even implemented dropout as an experiment. For an experiment with 4 hidden layers using dropout, the training accuracy acturally increased (not overfitting), and test accuracy increased slightly to around 76%.
+We've tried initializing He, and even implemented dropout as an experiment. For an experiment with 4 hidden layers using dropout, the training accuracy acturally increased (not overfitting), and test accuracy increased slightly to around 76%. Here's the final result.
+```
+('Test', '76.0%', 'train', '79.0%', 'cross entropy', 0.56767528801623368, 'alpha', 0.6, 'iterations', 2000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 3551, 'layers', [192, 193, 64, 4], 'PCA', False)
+```
