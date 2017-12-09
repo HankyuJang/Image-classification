@@ -203,7 +203,7 @@ class NeuralNet(object):
         lr = self.alpha * math.pow(drop, math.floor((1+epoch)/epochs_drop))
         return lr
 
-    def update_parameters(self, grads):
+    def update_parameters(self, grads, i):
         L = len(self.layer_dims) - 1
         for l in range(1, L+1):
             self.parameters["W"+str(l)] -= self.alpha * grads["dW"+str(l)]
@@ -221,21 +221,14 @@ class NeuralNet(object):
 
             grads = self.backpropogation(AL, Y, caches)
 
-            self.update_parameters(grads)
+            self.update_parameters(grads, i)
 
             if i%100 == 0:
-                if i == 1000:
-                    self.alpha /= 2
-                elif i > 2000 and i%1000==0:
-                    self.alpha /= 1.2
+                if i % 1000 == 0:
+                    self.alpha /= 1.5
                 costs.append((i, cost))
                 _, acc = self.test(X, Y)
                 print "Iteration", i, "->", "Accuracy", acc, "|| Cost", cost
-
-        self.costs = costs
-        self.caches = caches
-        self.AL = AL
-        self.gradients = grads
 
     def forward_propogation(self, X):
         L = len(self.layer_dims) - 1
@@ -300,7 +293,7 @@ class AdaBoost(object):
     def __init__(self, k = 500):
         self. k = k
 
-    def train(self, X_train, y_train, variables): 
+    def train(self, X_train, y_train, variables):
         possible_pairs = get_possible_pairs()
         y_unique = list(set(y_train))
         vote_classifier = {}
@@ -396,6 +389,7 @@ def read_file(fname, shuffle_data=True):
         np.random.shuffle(shuffle_indices)
         X  = X[shuffle_indices, ]
         y = y[shuffle_indices, ]
+        image = image[shuffl_indices, ]
 
     return list(image), X/255, y
 
@@ -408,7 +402,7 @@ def get_possible_pairs():
     global n_features
     possible_pairs = []
     for x in range(n_features):
-        for y in list(range(x,n_features)):
+        for y in list(range(x, n_features)):
             if x==y:
                 continue
             possible_pairs.append((x,y))
@@ -420,22 +414,15 @@ def to_file(image, pred):
         f.write(image[line] + ' ' + str(pred[line]) + '\n')
     f.close()
 
+
 if __name__ == "__main__":
     task, fname, model_file, model = sys.argv[1:]
 
-    image, X, y = read_file(fname, shuffle_data=False)
-
-    REDUCE_DIM = False
+    image, X, y = read_file(fname, shuffle_data=True)
 
     if task == "train":
         print "Training", model, "model..."
         tic = timeit.default_timer()
-
-        from sklearn.decomposition import PCA
-        pca = PCA(n_components=0.85, svd_solver="full")
-
-        if REDUCE_DIM:
-            X = pca.fit_transform(X)
 
         if model == "nearest":
             knn = KNN(k=9)
@@ -470,15 +457,15 @@ if __name__ == "__main__":
 
             vote_classifier_y_unique = []
             for i in range(num_variables):
-                vote_classifier_y_unique.append(adaboost.train(X_train_pairs[i], y_train_pairs[i], variables[i])) 
+                vote_classifier_y_unique.append(adaboost.train(X_train_pairs[i], y_train_pairs[i], variables[i]))
 
             models = (vote_classifier_y_unique, adaboost)
 
-        elif model == "nnet":
+        elif model == "nnet" or model == "best":
             lb = transform_Y_for_NN(y)
             Y_lb = lb.transform(y)
 
-            alpha = 0.6
+            alpha = 0.3
             iterations = 2000
             lambd = 0.5
             keep_prob = 0.6
@@ -493,7 +480,7 @@ if __name__ == "__main__":
         else:
             pass
 
-        cPickle.dump((models, pca), open(model_file, "wb"), protocol=2)
+        cPickle.dump(models, open(model_file, "wb"), protocol=2)
         toc = timeit.default_timer()
         print "Time taken", int(toc - tic), "seconds"
 
@@ -501,10 +488,7 @@ if __name__ == "__main__":
         print "Testing", model, "model..."
         tic = timeit.default_timer()
 
-        (models, pca) = cPickle.load(open(model_file, "rb"))
-
-        if REDUCE_DIM:
-            X = pca.transform(X)
+        models = cPickle.load(open(model_file, "rb"))
 
         if model == "nearest":
             knn = models
@@ -524,7 +508,7 @@ if __name__ == "__main__":
 
             final_classification = []
             count_correct = 0
-            
+
             for i in range(y.shape[0]):
                 lst = []
                 for pair in range(num_variables):
@@ -542,7 +526,7 @@ if __name__ == "__main__":
                 # f.write(image[line] + ' ' + str(final_classification[line]) + '\n')
             # f.close()
 
-        elif model == "nnet":
+        elif model == "nnet" or model == "best":
             lb, nnet = models
             Y_lb = lb.transform(y)
             pred, score = nnet.test(X.T, Y_lb.T)
@@ -551,7 +535,7 @@ if __name__ == "__main__":
             to_file(image, pred)
 
         else:
-            pass
+            print "Model not found"
 
         print ("Accuracy", score, "%")
         toc = timeit.default_timer()
