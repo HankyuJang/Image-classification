@@ -269,7 +269,7 @@ class NeuralNet(object):
 
 
 class KNN(object):
-    def __init__(self, k=5):
+    def __init__(self, k=7):
         self.k = k
 
     def train(self, X_train, y_train):
@@ -438,7 +438,7 @@ if __name__ == "__main__":
             X = pca.fit_transform(X)
 
         if model == "nearest":
-            knn = KNN(k=7)
+            knn = KNN(k=9)
             knn.train(X, y)
             models = (knn)
 
@@ -478,11 +478,11 @@ if __name__ == "__main__":
             lb = transform_Y_for_NN(y)
             Y_lb = lb.transform(y)
 
-            alpha = 0.3
+            alpha = 0.6
             iterations = 2000
-            lambd = 0.3
+            lambd = 0.5
             keep_prob = 0.6
-            layers = [X.shape[1]] + [128, 64] + [Y_lb.shape[1]]
+            layers = [X.shape[1]] + [193, 64] + [Y_lb.shape[1]]
 
             nnet = NeuralNet(alpha=alpha, iterations=iterations, lambd=lambd,
                              keep_prob=keep_prob, layer_dims=layers)
