@@ -38,7 +38,7 @@ __Testing__
 Next, we test the test dataset using the trained model which is saved in `knn.txt`.
 
 ```
-python test test-data.txt knn.txt nearest
+./orient.py test test-data.txt knn.txt nearest
 ```
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
@@ -80,7 +80,7 @@ __Training__
 First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `adaboost.txt`
 
 ```
-python orient.py train train-data.txt adaboost.txt adaboost
+./orient.py train train-data.txt adaboost.txt adaboost
 ```
 
 __Testing__
@@ -88,7 +88,7 @@ __Testing__
 Next, we test the test dataset using the trained model which is saved in `adaboost.txt`.
 
 ```
-python -i orient.py test test-data.txt adaboost.txt adaboost
+./orient.py test test-data.txt adaboost.txt adaboost
 ```
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
@@ -127,7 +127,7 @@ __Testing__
 Next, we test the test dataset using the trained model which is saved in `nnet.txt`.
 
 ```
-python test test-data.txt nnet.txt nnet
+./orient.py test test-data.txt nnet.txt nnet
 ```
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
