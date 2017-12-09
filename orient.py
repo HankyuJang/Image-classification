@@ -277,10 +277,13 @@ class KNN(object):
 
     def test(self, X_test, y_test):
         correct = 0
+        pred = []
         for X_ins, y_ins in zip(X_test, y_test):
-            if y_ins == self.predict(X_ins):
+            predict = self.predict(X_ins)
+            pred.append(predict)
+            if y_ins == predict:
                 correct += 1
-        return round(correct/len(X_test), 2) * 100
+        return pred, round(correct/len(X_test), 2) * 100
 
     def predict(self, p):
         class_count = Counter(self.nearest_neighbours(p))
@@ -384,6 +387,7 @@ class AdaBoost(object):
 
 def read_file(fname, shuffle_data=True):
     print "Reading data from", fname, "..."
+    image = np.loadtxt(fname, usecols=0, dtype=str)  # .reshape(len(X), 1)
     X = np.loadtxt(fname, usecols=range(2, 194), dtype=int)
     y = np.loadtxt(fname, usecols=1, dtype=int)  # .reshape(len(X), 1)
 
@@ -393,7 +397,7 @@ def read_file(fname, shuffle_data=True):
         X  = X[shuffle_indices, ]
         y = y[shuffle_indices, ]
 
-    return X/255, y
+    return list(image), X/255, y
 
 def transform_Y_for_NN(Y):
     lb = LabelBinarizer()
@@ -410,11 +414,16 @@ def get_possible_pairs():
             possible_pairs.append((x,y))
     return possible_pairs
 
+def to_file(image, pred):
+    f = open('output.txt', 'w')
+    for line in range(len(image)):
+        f.write(image[line] + ' ' + str(pred[line]) + '\n')
+    f.close()
 
 if __name__ == "__main__":
     task, fname, model_file, model = sys.argv[1:]
 
-    X, y = read_file(fname, shuffle_data=False)
+    image, X, y = read_file(fname, shuffle_data=False)
 
     REDUCE_DIM = False
 
@@ -499,7 +508,9 @@ if __name__ == "__main__":
 
         if model == "nearest":
             knn = models
-            score = knn.test(X, y)
+            pred, score = knn.test(X, y)
+            print("Writing to a file...")
+            to_file(image, pred)
 
         elif model == "adaboost":
             n_labels = len(set(y))
@@ -524,6 +535,13 @@ if __name__ == "__main__":
 
             score = float(count_correct)/float(len(y))
 
+            print("Writing to a file...")
+            to_file(image, final_classification)
+            # f = open('output.txt', 'w')
+            # for line in range(y.shape[0]):
+                # f.write(image[line] + ' ' + str(final_classification[line]) + '\n')
+            # f.close()
+
         elif model == "nnet":
             lb, nnet = models
             Y_lb = lb.transform(y)
@@ -535,3 +553,5 @@ if __name__ == "__main__":
         print ("Accuracy", score, "%")
         toc = timeit.default_timer()
         print ("Time taken", int(toc - tic), "seconds")
+
+
