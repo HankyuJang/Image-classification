@@ -229,7 +229,7 @@ class NeuralNet(object):
                 elif i > 2000 and i%1000==0:
                     self.alpha /= 1.2
                 costs.append((i, cost))
-                acc = self.test(X, Y)
+                _, acc = self.test(X, Y)
                 print "Iteration", i, "->", "Accuracy", acc, "|| Cost", cost
 
         self.costs = costs
@@ -265,7 +265,7 @@ class NeuralNet(object):
         self.predicted = AL.argmax(0)
         m = len(self.original)
         incorrect = np.count_nonzero(self.original - self.predicted)
-        return round((m - incorrect) / m, 2) * 100
+        return self.predicted, round((m - incorrect) / m, 2) * 100
 
 
 class KNN(object):
@@ -545,7 +545,10 @@ if __name__ == "__main__":
         elif model == "nnet":
             lb, nnet = models
             Y_lb = lb.transform(y)
-            score = nnet.test(X.T, Y_lb.T)
+            pred, score = nnet.test(X.T, Y_lb.T)
+            pred *= 90
+            print("Writing to a file...")
+            to_file(image, pred)
 
         else:
             pass
