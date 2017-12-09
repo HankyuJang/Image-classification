@@ -27,18 +27,18 @@ There were some issues when using k-nearest neighbor. If small k was used, the c
 
 __Training__
 
-First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `knn.txt`
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `nearest_model.txt`
 
 ```
-./orient.py train train-data.txt knn.txt nearest
+./orient.py train train-data.txt nearest_model.txt nearest
 ```
 
 __Testing__
 
-Next, we test the test dataset using the trained model which is saved in `knn.txt`.
+Next, we test the test dataset using the trained model which is saved in `nearest_model.txt`.
 
 ```
-./orient.py test test-data.txt knn.txt nearest
+./orient.py test test-data.txt nearest_model.txt nearest
 ```
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
@@ -77,18 +77,18 @@ In this problem, we used simple decision stumps that compares one entry in teh i
 
 __Training__
 
-First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `adaboost.txt`
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `adaboost_model.txt`
 
 ```
-./orient.py train train-data.txt adaboost.txt adaboost
+./orient.py train train-data.txt adaboost_model.txt adaboost
 ```
 
 __Testing__
 
-Next, we test the test dataset using the trained model which is saved in `adaboost.txt`.
+Next, we test the test dataset using the trained model which is saved in `adaboost_model.txt`.
 
 ```
-./orient.py test test-data.txt adaboost.txt adaboost
+./orient.py test test-data.txt adaboost_model.txt adaboost
 ```
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
@@ -116,18 +116,18 @@ Then, we modified the structure to make it work on different activations as well
 
 __Training__
 
-First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `nnet.txt`
+First, we train the neural network model using the training set. The parameter sets used in the model are specified in the `orient.py`, and the trained model is saved in `nnet_model.txt`
 
 ```
-./orient.py train train-data.txt nnet.txt nnet
+./orient.py train train-data.txt nnet_model.txt nnet
 ```
 
 __Testing__
 
-Next, we test the test dataset using the trained model which is saved in `nnet.txt`.
+Next, we test the test dataset using the trained model which is saved in `nnet_model.txt`.
 
 ```
-./orient.py test test-data.txt nnet.txt nnet
+./orient.py test test-data.txt nnet_model.txt nnet
 ```
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
