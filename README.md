@@ -164,3 +164,7 @@ We've tried initializing He, and even implemented dropout as an experiment. For 
 ```
 ('Test', '76.0%', 'train', '79.0%', 'cross entropy', 0.56767528801623368, 'alpha', 0.6, 'iterations', 2000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 3551, 'layers', [192, 193, 64, 4], 'PCA', False)
 ```
+
+## `best_model.txt`
+
+We used out Neural Network model as the `best_model.txt`
