@@ -518,7 +518,7 @@ if __name__ == "__main__":
                 if final_classification[i] == y[i]:
                     count_correct += 1
 
-            score = float(count_correct)/float(len(y))
+            score = round(float(count_correct)/float(len(y)), 2)
 
             print("Writing to a file...")
             to_file(image, final_classification)
