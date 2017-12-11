@@ -43,7 +43,7 @@ Next, we test the test dataset using the trained model which is saved in `neares
 
 3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
 
-As discussed above, If small k was used, the classification was vulnerable to noises. However, if large k was used, it included many points from other classes. Hence, we experimented with different k's in (3, 4, ..., 11). The best test accuracy was 71%, achived with k=9.
+As discussed above, If small k was used, the classification was vulnerable to noises. However, if large k was used, it included many points from other classes. Hence, we experimented with different k's in (3, 4, ..., sqrt(n)). The accuracy did not change much for different values of k, it was always between 68-71%, which tells us something about the dataset that there may be clusters in the data. The best test accuracy was 71%, achieved with k=9.
 ```
 ('Accuracy', 71.0, '%')
 ('Time taken', 100, 'seconds')
@@ -61,7 +61,7 @@ One interesting thing we've noticed was that using only blue pixels alone gave a
 ('Time taken', 40, 'seconds')
 ```
 
-We've also tried another dimensional reduction algorithm Non-negative Matrix Factorization ("NMF") for experiments. Other than using additional algorithms, we've tried to apply PCA or NMF for each of the color pixels. In other words, we implemented three PCA procedures, one per each color pixel when processing the data. However, we could get the test accuracy to get over 71%.
+We've also tried another dimensional reduction algorithm Non-negative Matrix Factorization ("NMF") for experiments. Other than using additional algorithms, we've tried to apply PCA or NMF for each of the color pixels. In other words, we implemented three PCA procedures, one per each color pixel when processing the data. However, we could not get the test accuracy to get over 71%.
 
 ## Classifier2: `adaboost`
 
@@ -108,9 +108,20 @@ In this way of implementation, we got around 66 to 70 percent accuracy.
 
 1. Description of how we formulated the problem including precisely defining the abstractions
 
-Due to the complexity of the structure of the neural network, we first designed the classifier to work on one hidden layer and `relu` for all layers and sigmoid for the last. We tried many different combinations of number of neurons on the hidden layer and varied `alpha.`
+The neural network is very complex and can be configured with many different features. We could experiment with many different configurations of the architecture of the network as well as add many more features to the network to make run faster as well as converge smoothly to generalize to the dataset. 
 
-Then, we modified the structure to make it work on different activations as well as number of layers. We've experimented the classifer by varying alpha, number of neurons, and activation function. To prevent Neural Network from overfitting the training set, we've tried diminishing value of alpha as iterations increase, and introduced a regularization term lambda. Details are described in section 3.
+Following are the features of our neural network:
+1. We implemented the neural network in such a way as to make it easy to experiment with different architectures of the network. Our neural network can change its architecture entirely according to the parameters passed to the network
+2. We used the `cross entropy cost` to calculate the error
+3. We implemented `batch gradient descent` instead of stochastic gradient descent which works way faster and converges smoothly to a minima
+4. We used `He initialization` for the weights so as to start at a better spot and converge faster
+5. To avoid overfitting the training dataset, we added the following features to our network:
+   * We implemented `dropout`
+   * We implemented `L2 regularization`
+6. The neural network can easily change its activation function as well to relu, softmax, sigmoid, tanh according to the parameters passed. By default, we have set the activation layers to `relu` for all the hidden layers and `softmax` at the last layer which worked best for this dataset
+7. We implemented `alpha decay` so as to converge smoothly
+
+After implementing the network we experimented a lot with the features that we added in order to increase our accuracy. We've experimented the classifer by varying alpha, number of hidden layers, number of neurons, lambda, dropout probability, and activation function.  Details are described in section 3.
 
 2. Brief description of how program works
 
@@ -130,40 +141,72 @@ Next, we test the test dataset using the trained model which is saved in `nnet_m
 ./orient.py test test-data.txt nnet_model.txt nnet
 ```
 
-3. Discussion of any problems, assumptions, simplification, and/or disign decisions made
+3. Discussion of any problems, assumptions, simplification, and/or design decisions made
 
- Here are the parameter sets we've tried to find a good working parameter set:
+Some observations we found while experimenting with different configurations of the network:
 
-### Experiment 1: One hidden layer
-- alpha: <a href="https://www.codecogs.com/eqnedit.php?latex=2^{-8},&space;2^{-7},&space;...,&space;2^0" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{-8},&space;2^{-7},&space;...,&space;2^0" title="2^{-8}, 2^{-7}, ..., 2^0" /></a>
-- number of neurons: <a href="https://www.codecogs.com/eqnedit.php?latex=2^{2},&space;2^{3},&space;...,&space;2^{6}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?2^{2},&space;2^{3},&space;...,&space;2^{6}" title="2^{2}, 2^{3}, ..., 2^{6}" /></a> 
-- activation function: three activation functions
-  - logistic: <a href="https://www.codecogs.com/eqnedit.php?latex=f(x)&space;=&space;\frac{1}{1&plus;e^{-x}}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(x)&space;=&space;\frac{1}{1&plus;e^{-x}}" title="f(x) = \frac{1}{1+e^{-x}}" /></a>
-  - tanh: <a href="https://www.codecogs.com/eqnedit.php?latex=f(x)&space;=&space;\frac{e^x-e^{-x}}{e^x&plus;e^{-x}}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(x)&space;=&space;\frac{e^x-e^{-x}}{e^x&plus;e^{-x}}" title="f(x) = \frac{e^x-e^{-x}}{e^x+e^{-x}}" /></a>
-  - relu: <a href="https://www.codecogs.com/eqnedit.php?latex=f(x)&space;=&space;\max(0,&space;x)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?f(x)&space;=&space;\max(0,&space;x)" title="f(x) = \max(0, x)" /></a>
-  
-### Experiment 2: More hidden layers
-- hidden layers with number of neurons per layer: <a href="https://www.codecogs.com/eqnedit.php?latex=(2^4,&space;2^4,&space;2^4),&space;(2^4,&space;2^4,&space;2^5),&space;...&space;(2^6,&space;2^6,&space;2^6)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?(2^4,&space;2^4,&space;2^4),&space;(2^4,&space;2^4,&space;2^5),&space;...&space;(2^6,&space;2^6,&space;2^6)" title="(2^4, 2^4, 2^4), (2^4, 2^4, 2^5), ... (2^6, 2^6, 2^6)" /></a>
+* We noticed that relu on all hidden layers and softmax on the last layer worked best. 
 
-### Experiment 3: One hidden layer, let alpha decrease as iteration increase
+* He initiliazation reduced the initial cross entropy cost by half. Thus, converging faster in lesser number of iterations.
 
-From the previous experiments, we could see that alpha played a big role in the performance of the Neural Network. Hence, we decided to let alpha start with some big number, then decreased it as iterations increased. In this way, we thought the algorithm would prevent getting stuck in a local minimum (bigger alpha), and later converge into a reasonable minimum point (smaller alpha in the end). Also, we implemented a regularization term lambda that would prevent the Neural Network from overfitting the training data.
+* we could see that alpha played a big role in the performance of the Neural Network. Hence, we decided to let alpha start with some big number, then decreased it as iterations increased. In this way, we thought the algorithm would prevent getting stuck in a local minimum (bigger alpha), and later converge into a reasonable minimum point (smaller alpha in the end). 
 
-We had one problem: as the iteration increase, Neural Network overfitted to the training model. Hence, we had to carefully choose the starting alpha, and experiment with diverse ratio of alpha to be decreased to prevent Neural Network to be overfitted to the training set. Surprisingly, using only one hidden layer with 193 neurons in that layer worked fairly well. Following is the parameter set we found after many experiments with parameters, hidden layers, and number of neurons. Following result is from one hidden layer (193 neurons)
+* Since we implemented regularization techniques like dropout and L2 regularization, we noticed that mkaing the architecture of the network more complex was not overfitting the datset but improving our test accuracy. 
+
+* We had one problem: as the iteration increase, Neural Network overfitted to the training data after a certain point. Hence, we had to carefully choose the starting alpha, and experiment with diverse ratio of alpha to be decreased to prevent Neural Network to be overfitted to the training set. Surprisingly, using only one hidden layer with 193 neurons in that layer worked fairly well. Following is the parameter set we found after many experiments with parameters, hidden layers, and number of neurons. Following result is from one hidden layer (193 neurons)
 
 ```
-('Test', '75.0%', 'train', '79.0%', 'log loss', 0.54874530470275185, 'alpha', 0.5, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 193, 4], 'PCA', False)
+('Test', '75.0%', 'train', '79.0%', 'cross entropy', 0.54874530470275185, 'alpha', 0.5, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 193, 4], 'PCA', False)
 ```
 
-As we have modifeid the script to work on any kind of hidden layers and number of neurons, here's another experiment that gave us 75% accuracy on the test set. Following result is from four hidden layers (8, 6, 7, 5) neurons.
+Here's another experiment that gave us 75% accuracy on the test set. Following result is from four hidden layers (8, 6, 7, 5) neurons.
 ```
-('Test', '75.0%', 'train', '77.0%', 'log loss', 0.58189618939350252, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 1240, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
+('Test', '75.0%', 'train', '77.0%', 'cross entropy', 0.58189618939350252, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 1240, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
 ```
 
-We've tried initializing He, and even implemented dropout as an experiment. For an experiment with 4 hidden layers using dropout, the training accuracy acturally increased (not overfitting), and test accuracy increased slightly to around 76%. Here's the final result.
+We've tried initializing He, and even implemented dropout. For an experiment with 4 hidden layers using dropout, the training accuracy actually increased (not overfitting), and test accuracy increased slightly to around 76%. Here's the final result.
 ```
 ('Test', '76.0%', 'train', '79.0%', 'cross entropy', 0.56767528801623368, 'alpha', 0.6, 'iterations', 2000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 3551, 'layers', [192, 193, 64, 4], 'PCA', False)
 ```
+
+Other Experiments:
+```
+('Test', '73.0%', 'train', '76.0%', 'cross entropy', 0.5914779638070724, 'alpha', 0.3, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 16, 4], 'PCA', False)
+('Test', '74.0%', 'train', '78.0%', 'cross entropy', 0.56314676841124767, 'alpha', 0.3, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 193, 4], 'PCA', False)
+('Test', '75.0%', 'train', '79.0%', 'cross entropy', 0.54874530470275185, 'alpha', 0.5, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 193, 4], 'PCA', False)
+('Test', '74.0%', 'train', '78.0%', 'cross entropy', 0.53599437926717441, 'alpha', 0.5, 'iterations', 2000, 'lambd', 0.1, 'layers', [192, 193, 130, 4], 'PCA', False)
+('Test', '74.0%', 'train', '78.0%', 'cross entropy', 0.54824290828604172, 'alpha', 0.5, 'iterations', 2000, 'lambd', 0, 'layers', [192, 193, 130, 4], 'PCA', False)
+('Test', '73.0%', 'train', '78.0%', 'cross entropy', 0.55188726753853878, 'alpha', 0.5, 'iterations', 5000, 'lambd', 0, 'layers', [192, 130, 4], 'PCA', False)
+('Test', '74.0%', 'train', '78.0%', 'cross entropy', 0.56243754263001733, 'alpha', 0.125, 'iterations', 10000, 'lambd', 0.1, 'layers', [192, 16, 4], 'PCA', False)
+('Test', '74.0%', 'train', '77.0%', 'cross entropy', 0.57976600236243447, 'alpha', 0.125, 'iterations', 20000, 'lambd', 0.1, 'layers', [192, 16, 4], 'PCA', False)
+('Test', '74.0%', 'train', '77.0%', 'cross entropy', 0.57965485907628056, 'alpha', 0.125, 'iterations', 20000, 'lambd', 0.01, 'layers', [192, 16, 4], 'PCA', False)
+('Test', '74.0%', 'train', '78.0%', 'cross entropy', 0.52366636304239556, 'alpha', 0.2, 'iterations', 20000, 'lambd', 0.1, 'layers', [192, 16, 16, 4], 'PCA', False)
+('Test', '73.0%', 'train', '75.0%', 'cross entropy', 0.63716698428350682, 'alpha', 0.2, 'iterations', 2000, 'lambd', 0.1, 'Time', 185, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
+('Test', '72.0%', 'train', '74.0%', 'cross entropy', 0.75689462861694456, 'alpha', 0.02, 'iterations', 2000, 'lambd', 0.1, 'Time', 190, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
+('Test', '72.0%', 'train', '74.0%', 'cross entropy', 0.75689462861694456, 'alpha', 0.02, 'iterations', 2000, 'lambd', 0.1, 'Time', 186, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
+('Test', '75.0%', 'train', '77.0%', 'cross entropy', 0.58189618939350252, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 1240, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
+('Test', '72.0%', 'train', '75.0%', 'cross entropy', 0.6128374065182165, 'alpha', 0.02, 'iterations', 10000, 'lambd', 0.05, 'Time', 942, 'layers', [192, 8, 6, 7, 5, 4], 'PCA', False)
+('Test', '73.0%', 'train', '78.0%', 'cross entropy', 0.53774609849352117, 'alpha', 1, 'iterations', 10000, 'lambd', 0.1, 'Time', 4654, 'layers', [192, 193, 16, 4], 'PCA', False)
+('Test', '72.0%', 'train', '74.0%', 'cross entropy', 0.68107515367792371, 'alpha', 0.5, 'iterations', 1000, 'lambd', 0.1, 'Time', 53, 'layers', [64, 16, 4], 'PCA', False)
+('Test', '72.0%', 'train', '74.0%', 'cross entropy', 0.7011610388112991, 'alpha', 0.3, 'iterations', 1000, 'lambd', 0.1, 'Time', 45, 'layers', [64, 16, 4], 'PCA', False)
+('Test', '72.0%', 'train', '76.0%', 'cross entropy', 0.63815855109221942, 'alpha', 0.3, 'iterations', 1000, 'lambd', 0.1, 'Time', 83, 'layers', [192, 16, 4], 'PCA', False)
+('Test', '73.0%', 'train', '78.0%', 'cross entropy', 0.53794783161106918, 'alpha', 1, 'iterations', 10000, 'lambd', 0.1, 'Time', 12436, 'layers', [192, 193, 16, 4], 'PCA', False)
+('Test', '76.0%', 'train', '79.0%', 'cross entropy', 0.52401208775124242, 'alpha', 0.3, 'iterations', 3000, 'lambd', 0.7, 'Time', 1035, 'layers', [192, 128, 64, 4], 'PCA', False)
+('Test', '76.0%', 'train', '79.0%', 'cross entropy', 0.51418333469315292, 'alpha', 0.3, 'iterations', 4000, 'lambd', 0.7, 'Time', 1405, 'layers', [192, 128, 64, 4], 'PCA', False)
+('Test', '76.0%', 'train', '81.0%', 'cross entropy', 0.46701730873939951, 'alpha', 0.3, 'iterations', 10000, 'lambd', 0.7, 'Time', 3484, 'layers', [192, 128, 64, 4], 'PCA', False)
+('Test', '72.0%', 'train', '76.0%', 'cross entropy', 0.57763705630044049, 'alpha', 0.3, 'iterations', 1000, 'lambd', 0.7, 'Time', 456, 'layers', [192, 128, 64, 20, 4], 'PCA', False)
+('Test', '75.0%', 'train', '79.0%', 'cross entropy', 0.57583222617170127, 'alpha', 0.3, 'iterations', 5000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 3221, 'layers', [192, 128, 64, 4], 'PCA', False)
+('Test', '73.0%', 'train', '77.0%', 'cross entropy', 0.67285100514190721, 'alpha', 0.3, 'iterations', 1000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 1453, 'layers', [192, 193, 128, 64, 32, 4], 'PCA', False)
+('Test', '75.0%', 'train', '77.0%', 'cross entropy', 0.6104756923616923, 'alpha', 0.3, 'iterations', 1000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 832, 'layers', [192, 193, 64, 4], 'PCA', False)
+('Test', '75.0%', 'train', '78.0%', 'cross entropy', 0.5883992468877195, 'alpha', 0.3, 'iterations', 2000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 1710, 'layers', [192, 193, 64, 4], 'PCA', False)
+('Test', '76.0%', 'train', '79.0%', 'cross entropy', 0.56767528801623368, 'alpha', 0.6, 'iterations', 2000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 3551, 'layers', [192, 193, 64, 4], 'PCA', False)
+('Test', '76.0%', 'train', '80.0%', 'cross entropy', 0.55359832241071549, 'alpha', 0.6, 'iterations', 5000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 4371, 'layers', [192, 193, 64, 4], 'PCA', False)
+('Test', '76.0%', 'train', '80.0%', 'cross entropy', 0.54841343495295936, 'alpha', 0.6, 'iterations', 10000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 13280, 'layers', [192, 193, 64, 4], 'PCA', False)
+('Test', '75.0%', 'train', '81.0%', 'cross entropy', 0.51880606858132194, 'alpha', 0.5, 'iterations', 10000, 'lambd', 0.5, 'keep_prob', 0.6, 'Time', 8669, 'layers', [192, 193, 64, 4], 'PCA', False)
+```
+
+* Since the images were really small 8 x 8 only, no matter what configurations we tried, nothing gave us an accuracy over 76% on the test dataset. We believe there may be a certain threshold on the accuracy that neural network cannot cross given a smaller training data making it not so useful as compared to other simpler algorithms. We think that with better resolution of the images, we could've achieved a higher test accuracy with a deep neural network. However, with limited computation resources we could only experiment on the smaller images.
+
 
 ## `best_model.txt`
 
