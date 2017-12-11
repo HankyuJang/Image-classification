@@ -447,7 +447,7 @@ if __name__ == "__main__":
 
             models = (lb, nnet)
         else:
-            pass
+            print "Model not found"
 
         cPickle.dump(models, open(model_file, "wb"), protocol=2)
         toc = timeit.default_timer()
@@ -486,7 +486,7 @@ if __name__ == "__main__":
                 if final_classification[i] == y[i]:
                     count_correct += 1
 
-            score = round(float(count_correct)/float(len(y)), 2)
+            score = round(float(count_correct)/float(len(y)), 2)*100
 
             print("Writing to a file...")
             to_file(image, final_classification)
