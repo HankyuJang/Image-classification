@@ -1,37 +1,6 @@
 #!/usr/bin/env python
 
-### KNN  ######================================================================
-# k 3  ->  Accuracy 69.0 % | Time 101
-# k 4  ->  Accuracy 70.0 % | Time 117
-# k 5  ->  Accuracy 69.0 % | Time 126
-# k 6  ->  Accuracy 70.0 % | Time 109
-# k 7  ->  Accuracy 70.0 % | Time 103
-# k 8  ->  Accuracy 69.0 % | Time 112
-# k 9  ->  Accuracy 71.0 % | Time 100
-# k 10 ->  Accuracy 70.0 % | Time 100
-#
-## If using PCA before KNN  ########
-# k 3  ->  Accuracy 68.0 % | Time 30
-# k 4  ->  Accuracy 68.0 % | Time 39
-# k 5  ->  Accuracy 68.0 % | Time 40
-# k 6  ->  Accuracy 69.0 % | Time 40
-# k 7  ->  Accuracy 71.0 % | Time 32
-# k 8  ->  Accuracy 70.0 % | Time 31
-# k 9  ->  Accuracy 69.0 % | Time 33
-# k 10 ->  Accuracy 69.0 % | Time 31
-# k 11 ->  Accuracy 70.0 % | Time 42
-#==============================================================================
-
-# ==  Neural Network  =========================================================
-#
-# Implemented He Initialization
-# Implemented L2 Regularization
-# ReLU for hidden layers and Softmax for output layer
-#
-##### TODO  ###############
-#
-# Dropout
-# =============================================================================
+### Please see README for documentation 
 
 from __future__ import division
 import sys
@@ -240,7 +209,6 @@ class NeuralNet(object):
             b = self.parameters["b" + str(l)]
             Z = np.dot(W, A_prev) + b
             A = self.relu(Z)
-#            A, cache = self.linear_fwd_activation(A_prev, W, b, "relu")
 
         W = self.parameters["W" + str(L)]
         b = self.parameters["b" + str(L)]
